@@ -1,4 +1,5 @@
 
+#include "adc.h"
 #include "cmsis_os.h"
 
 #include "fmc.h"
@@ -9,13 +10,21 @@
 #include "spi.h"
 #include "ltdc.h"
 #include "dma2d.h"
+#include "stm32f4xx_hal_def.h"
+#include "usart.h"
 
 #include "ILI9341.hpp"
 #include "IS42S16400J_7TL.h"
+#include "stm32f4xx_hal_adc.h"
+#include "stm32f4xx_hal_uart.h"
 
 #include <cstdint>
+#include <cstdio>
 #include <stdint.h>
 #include <string.h>
+
+
+extern osThreadId defaultTaskHandle;
 
 TFT_LCD::ILI9341 lcd(
     {
@@ -31,19 +40,28 @@ TFT_LCD::ILI9341 lcd(
 #define FB_ADDR         ((uint32_t)0xD0000000)
 #define FB_BACK_ADDR    ((uint32_t)0xD004B000)
 
-// static void LCD_Fill_DMA2D(uint32_t buffer, uint32_t back)
-// {
-//     if (HAL_DMA2D_Start(
-//             &hdma2d,
-//             (uint32_t)back,   // Source
-//             (uint32_t)buffer,  // Destination (LTDC가 읽음)
-//             LCD_WIDTH,
-//             LCD_HEIGHT) != HAL_OK) {
-//         Error_Handler();
-//     }
+static void LCD_Fill_DMA2D()
+{
+    if (HAL_DMA2D_Start(
+            &hdma2d,
+            (uint32_t)FB_BACK_ADDR,   // Source
+            (uint32_t)FB_ADDR,  // Destination (LTDC가 읽음)
+            TFT_LCD::ILI9341::LCD_WIDTH,
+            TFT_LCD::ILI9341::LCD_HEIGHT) != HAL_OK) {
+        Error_Handler();
+    }
 
-//     HAL_DMA2D_PollForTransfer(&hdma2d, HAL_MAX_DELAY);
-// }
+    HAL_DMA2D_PollForTransfer(&hdma2d, HAL_MAX_DELAY);
+}
+
+uint16_t joystickPosition[2];
+
+void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc)
+{
+    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+    vTaskNotifyGiveFromISR(defaultTaskHandle, &xHigherPriorityTaskWoken);
+    portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+}
 
 extern "C"
 void StartDefaultTask(void const * argument){
@@ -54,14 +72,22 @@ void StartDefaultTask(void const * argument){
     // LCD 초기화
     lcd.initalize(reinterpret_cast<uint16_t*>(FB_ADDR));
 
-    // 문자열 출력
-    lcd.putText("Hello World", 10, 10, Font12, 0xFFFF);
-    lcd.putText("TFT_LCD Test", 10, Font20.Height + 10, Font12, 0xFFFF);  
-    
-    // 파랑색 사각형
-    lcd.drawRectangle(10, 50, 100, 100, TFT_LCD::Pixel(0x1F, 0x00, 0x00));
+    char msg[64] = "";
+    TFT_LCD::FrameBuffer backBuffer(reinterpret_cast<uint16_t*>(FB_BACK_ADDR),TFT_LCD::ILI9341::LCD_WIDTH,TFT_LCD::ILI9341::LCD_HEIGHT);
 
     for(;;){
-        osDelay(10);
+        HAL_ADC_Start_DMA(&hadc1,(uint32_t*)joystickPosition,2);
+
+        backBuffer.drawRectangle(10, 10, 240, 60, 0x0000);
+        sprintf(msg, "X : %d",joystickPosition[0]);
+        backBuffer.putText(msg,10, 10, Font20, 0xFFFF);
+        sprintf(msg, "y : %d",joystickPosition[1]);
+        backBuffer.putText(msg,10, 10 + Font20.Height, Font20, 0xFFFF);
+
+        LCD_Fill_DMA2D();
+
+        sprintf(msg, "%d %d\r\n",joystickPosition[0],joystickPosition[1]);
+        HAL_UART_Transmit(&huart1,(uint8_t*)msg,strlen(msg),HAL_MAX_DELAY);
+        osDelay(33);
     }
 }

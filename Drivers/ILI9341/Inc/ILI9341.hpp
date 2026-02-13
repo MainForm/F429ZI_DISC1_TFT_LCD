@@ -37,6 +37,9 @@ namespace TFT_LCD {
     };
 
     class ILI9341{
+    public:
+        static const uint32_t LCD_WIDTH {240};
+        static const uint32_t LCD_HEIGHT {320};
     private:
         /** 
         * @brief  ILI9341 Registers  
@@ -130,9 +133,6 @@ namespace TFT_LCD {
             GAMMA3_EN       = 0xF2,   /* 3 Gamma enable register */
             PRC             = 0xF7,   /* Pump ratio control register */
         };
-
-        static const uint32_t LCD_WIDTH {240};
-        static const uint32_t LCD_HEIGHT {320};
 
         FrameBuffer _FrameBuffer[MAX_LAYER];
 
