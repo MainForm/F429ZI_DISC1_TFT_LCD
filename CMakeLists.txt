@@ -42,6 +42,7 @@ add_executable(${CMAKE_PROJECT_NAME})
 add_subdirectory(cmake/stm32cubemx)
 add_subdirectory(Drivers/ILI9341)
 add_subdirectory(Drivers/STMPE811)
+add_subdirectory(Drivers/SDRAM)
 
 # Link directories setup
 target_link_directories(${CMAKE_PROJECT_NAME} PRIVATE
@@ -52,8 +53,6 @@ target_link_directories(${CMAKE_PROJECT_NAME} PRIVATE
 target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user sources here
     ${PROJECT_SOURCE_DIR}/App/Src/MainTask.cpp
-
-    ${PROJECT_SOURCE_DIR}/Drivers/SDRAM/Src/IS42S16400J_7TL.c
 )
 
 # Add include paths
@@ -78,6 +77,7 @@ target_link_libraries(${CMAKE_PROJECT_NAME}
     # Add user defined libraries
     ili9341
     stmpe811
+    sdramIS42S16400J
 )
 
 target_compile_options(${CMAKE_PROJECT_NAME} PRIVATE
