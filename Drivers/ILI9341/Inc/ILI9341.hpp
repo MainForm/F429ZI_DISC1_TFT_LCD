@@ -34,6 +34,8 @@ namespace TFT_LCD {
         } CS,WR,RD;
 
         LTDC_HandleTypeDef* const hltdc = nullptr;
+
+        DMA2D_HandleTypeDef* const hdma2d = nullptr;
     };
 
     class ILI9341{
@@ -139,9 +141,10 @@ namespace TFT_LCD {
 
         FrameBuffer _FrameBuffer[FRAME_BUFFER_COUNT];
 
-        uint32_t _selectedFrameBuffer = -1;
+        uint32_t _selectedFrameBuffer = 0;
 
         bool _hasBackFrame = false;
+        bool _isUpdatedRecently = false;
     private:
         const ILI9341_Config config;
     private:

@@ -10,13 +10,10 @@
 #include "spi.h"
 #include "ltdc.h"
 #include "dma2d.h"
-#include "stm32f4xx_hal_def.h"
 #include "usart.h"
 
 #include "ILI9341.hpp"
 #include "IS42S16400J_7TL.h"
-#include "stm32f4xx_hal_adc.h"
-#include "stm32f4xx_hal_uart.h"
 
 #include <cstdint>
 #include <cstdio>
@@ -27,32 +24,18 @@
 extern osThreadId defaultTaskHandle;
 
 TFT_LCD::ILI9341 lcd(
-    {
+    TFT_LCD::ILI9341_Config{
         .hspi = &hspi5,
         .CS = {CSX_GPIO_Port,CSX_Pin},   // CS
         .WR = {WRX_DCX_GPIO_Port,WRX_DCX_Pin},   // WR
         .RD = {RDX_GPIO_Port,RDX_Pin},    // RD
-        .hltdc = &hltdc
+        .hltdc = &hltdc,
+        .hdma2d = &hdma2d
     }
 );
 
-
 #define FB_ADDR         ((uint32_t)0xD0000000)
 #define FB_BACK_ADDR    ((uint32_t)FB_ADDR + (TFT_LCD::ILI9341::LCD_HEIGHT * TFT_LCD::ILI9341::LCD_WIDTH * TFT_LCD::ILI9341::PIXEL_BYTE_COUNT))
-
-static void LCD_Fill_DMA2D()
-{
-    if (HAL_DMA2D_Start(
-            &hdma2d,
-            (uint32_t)FB_BACK_ADDR,   // Source
-            (uint32_t)FB_ADDR,  // Destination (LTDC가 읽음)
-            TFT_LCD::ILI9341::LCD_WIDTH,
-            TFT_LCD::ILI9341::LCD_HEIGHT) != HAL_OK) {
-        Error_Handler();
-    }
-
-    HAL_DMA2D_PollForTransfer(&hdma2d, HAL_MAX_DELAY);
-}
 
 uint16_t joystickPosition[2];
 

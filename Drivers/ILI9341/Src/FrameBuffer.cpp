@@ -1,6 +1,9 @@
 #include "FrameBuffer.hpp"
 #include "font/fonts.hpp"
+#include "main.h"
 #include <cstdint>
+#include <cstring>
+
 
 namespace TFT_LCD {
     FrameBuffer::FrameBuffer(uint16_t* const buffer, uint32_t width, uint32_t height,PixelFormat format)
@@ -39,6 +42,24 @@ namespace TFT_LCD {
 
     uint32_t FrameBuffer::getHeight() const {
         return _height;
+    }
+
+    void FrameBuffer::copyBuffer(FrameBuffer& other,DMA2D_HandleTypeDef * hdma2d){
+
+        if(hdma2d == nullptr){
+            memcpy(getBufferAddress(), other.getBufferAddress(),
+                    _height*_width*_pixelFormat);
+        }
+        else{
+                HAL_DMA2D_Start(
+                        hdma2d,
+                        (uint32_t)other.getBufferAddress(),   // Source
+                        (uint32_t)this->getBufferAddress(),  // Destination (LTDC가 읽음)
+                        _width,
+                        _height);
+
+                HAL_DMA2D_PollForTransfer(hdma2d, HAL_MAX_DELAY);
+        }
     }
 
     void FrameBuffer::setHeight(uint32_t height){

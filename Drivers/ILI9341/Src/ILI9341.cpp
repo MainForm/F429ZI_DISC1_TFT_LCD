@@ -3,6 +3,7 @@
 
 #include <array>
 #include <cstdint>
+#include <cstring>
 
 #ifdef USE_FREERTOS
 #include "cmsis_os.h"
@@ -335,18 +336,15 @@ namespace TFT_LCD {
         }
 
         FrameBuffer frameBuffer(FrameBufferAddress,LCD_WIDTH,LCD_HEIGHT);
-        _selectedFrameBuffer = 0;
-        _FrameBuffer[_selectedFrameBuffer] = frameBuffer;
+        _FrameBuffer[0] = frameBuffer;
 
         setLayer(0,frameBuffer);
     }
 
     void ILI9341::setBackFrameBuffer(uint16_t* FrameBufferAddress){
-        uint32_t backFrameIdx = (_selectedFrameBuffer + 1) % 2;
-
         FrameBuffer backFrame(FrameBufferAddress,LCD_WIDTH,LCD_HEIGHT);
 
-        _FrameBuffer[backFrameIdx] = backFrame;
+        _FrameBuffer[1] = backFrame;
 
         _hasBackFrame = true;
     }
@@ -383,31 +381,46 @@ namespace TFT_LCD {
     void ILI9341::drawRectangle(uint32_t x, uint32_t y, uint32_t width, uint32_t height, Pixel color,bool update){
         uint32_t curFrameBufferIdx = _selectedFrameBuffer;
 
-        if(_hasBackFrame == true && update == false){
-            curFrameBufferIdx = (curFrameBufferIdx + 1) % 2;
+        if(_hasBackFrame == true){
+            curFrameBufferIdx = !curFrameBufferIdx;
         }
 
         _FrameBuffer[curFrameBufferIdx].drawRectangle(x, y, width, height, color);
+        _isUpdatedRecently = false;
+
+        if(_hasBackFrame == true && update == true){
+            updateFrame();
+        }
     }
 
     void ILI9341::putText(std::string text, uint32_t x,uint32_t y,const sFONT& font,Pixel color,bool update){
         uint32_t curFrameBufferIdx = _selectedFrameBuffer;
 
-        if(_hasBackFrame == true && update == false){
-            curFrameBufferIdx = (curFrameBufferIdx + 1) % 2;
+        if(_hasBackFrame == true){
+            curFrameBufferIdx = !curFrameBufferIdx;
         }
 
         _FrameBuffer[curFrameBufferIdx].putText(text, x, y, font, color);
+        _isUpdatedRecently = false;
+
+        if(_hasBackFrame == true && update == true){
+            updateFrame();
+        }
     }
 
     void ILI9341::putChar(uint8_t character,uint32_t x,uint32_t y,const sFONT& font,Pixel color,bool update){
         uint32_t curFrameBufferIdx = _selectedFrameBuffer;
 
-        if(_hasBackFrame == true && update == false){
-            curFrameBufferIdx = (curFrameBufferIdx + 1) % 2;
+        if(_hasBackFrame == true){
+            curFrameBufferIdx = !curFrameBufferIdx;
         }
 
         _FrameBuffer[curFrameBufferIdx].putChar(character, x, y, font, color);
+        _isUpdatedRecently = false;
+        
+        if(_hasBackFrame == true && update == true){
+            updateFrame();
+        }
     }
 
     bool ILI9341::updateFrame(){
@@ -415,9 +428,16 @@ namespace TFT_LCD {
             return false;
         }
 
-        _selectedFrameBuffer = (_selectedFrameBuffer + 1) % 2;
+        if(_isUpdatedRecently == true){
+            return false;
+        }
+        
+        _selectedFrameBuffer = !_selectedFrameBuffer;
 
         setLayer(0, _FrameBuffer[_selectedFrameBuffer]);
+
+        _FrameBuffer[!_selectedFrameBuffer].copyBuffer(_FrameBuffer[_selectedFrameBuffer],config.hdma2d);
+        _isUpdatedRecently = true;
 
         return true;
     }

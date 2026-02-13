@@ -7,6 +7,7 @@
 #include <cstdint>
 #include <string>
 #include "font/fonts.hpp"
+#include "main.h"
 
 namespace TFT_LCD {
     union Pixel{
@@ -60,6 +61,8 @@ namespace TFT_LCD {
         uint32_t getHeight() const;
 
         void setHeight(uint32_t height);
+
+        void copyBuffer(FrameBuffer& other,DMA2D_HandleTypeDef * hdma2d = nullptr);
 
         void drawRectangle(uint32_t x, uint32_t y, uint32_t width, uint32_t height, Pixel color);
 
