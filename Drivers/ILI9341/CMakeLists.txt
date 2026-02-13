@@ -1,4 +1,5 @@
 
+
 add_library(ili9341 
     STATIC 
         ${CMAKE_CURRENT_SOURCE_DIR}/Src/ILI9341.cpp
@@ -25,4 +26,10 @@ target_compile_options(ili9341 PRIVATE
     # Add user defined compile options
 
     $<$<COMPILE_LANGUAGE:CXX>: -fno-rtti -fno-exceptions>   
+)
+
+set_target_properties(ili9341 PROPERTIES
+  CXX_STANDARD 20
+  CXX_STANDARD_REQUIRED YES
+  CXX_EXTENSIONS NO
 )
