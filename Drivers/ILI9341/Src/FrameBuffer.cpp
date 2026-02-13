@@ -3,10 +3,22 @@
 #include <cstdint>
 
 namespace TFT_LCD {
-    FrameBuffer::FrameBuffer(uint16_t* const buffer, uint32_t width, uint32_t height)
-        : _buffer{reinterpret_cast<Pixel*>(buffer)}, _width{width}, _height{height}
+    FrameBuffer::FrameBuffer(uint16_t* const buffer, uint32_t width, uint32_t height,PixelFormat format)
+        : _buffer{reinterpret_cast<Pixel*>(buffer)}, _width{width}, _height{height}, _pixelFormat(format)
     {
         drawRectangle(0, 0, _width, _height, 0x0000);
+    }
+
+    FrameBuffer& FrameBuffer::operator=(const FrameBuffer& other){
+        if(this == &other){
+            return *this;
+        }
+
+        _buffer = other._buffer;
+        _width = other._width;
+        _height = other._height;
+        _pixelFormat = other._pixelFormat;
+        return *this;
     }
 
     void FrameBuffer::setBuffer(Pixel* const newBuffer){

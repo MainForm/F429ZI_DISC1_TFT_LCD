@@ -77,7 +77,7 @@ namespace TFT_LCD {
     The ILI9341 LCD initialization process is based on the STM32 ILI9341 library.
     URL : https://github.com/STMicroelectronics/stm32-ili9341/blob/main/ili9341.c
     */
-    void ILI9341::initalize(uint16_t* FrameAddress){
+    void ILI9341::initalize(uint16_t* FrameBufferAddress){
 
         /* Configure LCD */
         {
@@ -334,7 +334,21 @@ namespace TFT_LCD {
             writeCommand(GRAM);
         }
 
-        setLayer(0,FrameBuffer(FrameAddress,LCD_WIDTH,LCD_HEIGHT));
+        FrameBuffer frameBuffer(FrameBufferAddress,LCD_WIDTH,LCD_HEIGHT);
+        _selectedFrameBuffer = 0;
+        _FrameBuffer[_selectedFrameBuffer] = frameBuffer;
+
+        setLayer(0,frameBuffer);
+    }
+
+    void ILI9341::setBackFrameBuffer(uint16_t* FrameBufferAddress){
+        uint32_t backFrameIdx = (_selectedFrameBuffer + 1) % 2;
+
+        FrameBuffer backFrame(FrameBufferAddress,LCD_WIDTH,LCD_HEIGHT);
+
+        _FrameBuffer[backFrameIdx] = backFrame;
+
+        _hasBackFrame = true;
     }
 
     void ILI9341::setLayer(uint32_t layerIndex,const FrameBuffer& frameBuffer, uint32_t left, uint32_t top){
@@ -364,20 +378,47 @@ namespace TFT_LCD {
 
         /* Dithering activation */
         HAL_LTDC_EnableDither(config.hltdc);
-
-        _FrameBuffer[layerIndex] = frameBuffer;
-        _activatedLayerIndex = layerIndex;
     }
 
-    void ILI9341::drawRectangle(uint32_t x, uint32_t y, uint32_t width, uint32_t height, Pixel color){
-        _FrameBuffer[_activatedLayerIndex].drawRectangle(x, y, width, height, color);
+    void ILI9341::drawRectangle(uint32_t x, uint32_t y, uint32_t width, uint32_t height, Pixel color,bool update){
+        uint32_t curFrameBufferIdx = _selectedFrameBuffer;
+
+        if(_hasBackFrame == true && update == false){
+            curFrameBufferIdx = (curFrameBufferIdx + 1) % 2;
+        }
+
+        _FrameBuffer[curFrameBufferIdx].drawRectangle(x, y, width, height, color);
     }
 
-    void ILI9341::putText(std::string text, uint32_t x,uint32_t y,const sFONT& font,Pixel color){
-        _FrameBuffer[_activatedLayerIndex].putText(text, x, y, font,  color); 
+    void ILI9341::putText(std::string text, uint32_t x,uint32_t y,const sFONT& font,Pixel color,bool update){
+        uint32_t curFrameBufferIdx = _selectedFrameBuffer;
+
+        if(_hasBackFrame == true && update == false){
+            curFrameBufferIdx = (curFrameBufferIdx + 1) % 2;
+        }
+
+        _FrameBuffer[curFrameBufferIdx].putText(text, x, y, font, color);
     }
 
-    void ILI9341::putChar(uint8_t character,uint32_t x,uint32_t y,const sFONT& font,Pixel color){
-        _FrameBuffer[_activatedLayerIndex].putChar(character, x, y, font, color);
+    void ILI9341::putChar(uint8_t character,uint32_t x,uint32_t y,const sFONT& font,Pixel color,bool update){
+        uint32_t curFrameBufferIdx = _selectedFrameBuffer;
+
+        if(_hasBackFrame == true && update == false){
+            curFrameBufferIdx = (curFrameBufferIdx + 1) % 2;
+        }
+
+        _FrameBuffer[curFrameBufferIdx].putChar(character, x, y, font, color);
+    }
+
+    bool ILI9341::updateFrame(){
+        if(_hasBackFrame == false){
+            return false;
+        }
+
+        _selectedFrameBuffer = (_selectedFrameBuffer + 1) % 2;
+
+        setLayer(0, _FrameBuffer[_selectedFrameBuffer]);
+
+        return true;
     }
 }

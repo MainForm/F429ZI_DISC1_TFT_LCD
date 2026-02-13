@@ -40,6 +40,7 @@ namespace TFT_LCD {
     public:
         static const uint32_t LCD_WIDTH {240};
         static const uint32_t LCD_HEIGHT {320};
+        static const uint32_t PIXEL_BYTE_COUNT {2};
     private:
         /** 
         * @brief  ILI9341 Registers  
@@ -134,10 +135,13 @@ namespace TFT_LCD {
             PRC             = 0xF7,   /* Pump ratio control register */
         };
 
-        FrameBuffer _FrameBuffer[MAX_LAYER];
+        static const uint32_t FRAME_BUFFER_COUNT = 2;
 
-        uint32_t _activatedLayerIndex = -1;
-    
+        FrameBuffer _FrameBuffer[FRAME_BUFFER_COUNT];
+
+        uint32_t _selectedFrameBuffer = -1;
+
+        bool _hasBackFrame = false;
     private:
         const ILI9341_Config config;
     private:
@@ -145,17 +149,21 @@ namespace TFT_LCD {
         void writeData(const uint8_t data);
 
         void writeRegister(const uint8_t address,std::span<const uint8_t> data);
+
+        void setLayer(uint32_t layerIndex,const FrameBuffer& frameBuffer, uint32_t left = 0,uint32_t top = 0);
     public:
         ILI9341(ILI9341_Config config);
 
-        void initalize(uint16_t* FrameBuffe);
+        void initalize(uint16_t* FrameBufferAddress);
 
-        void setLayer(uint32_t layerIndex,const FrameBuffer& frameBuffer, uint32_t x = 0,uint32_t y = 0);
+        void setBackFrameBuffer(uint16_t* FrameBufferAddress);
 
-        void drawRectangle(uint32_t x, uint32_t y, uint32_t width, uint32_t height, Pixel color);
+        void drawRectangle(uint32_t x, uint32_t y, uint32_t width, uint32_t height, Pixel color,bool update = true);
 
-        void putText(std::string text, uint32_t x,uint32_t y,const sFONT& font,Pixel color);
-        void putChar(uint8_t character,uint32_t x,uint32_t y,const sFONT& font,Pixel color);
+        void putText(std::string text, uint32_t x,uint32_t y,const sFONT& font,Pixel color,bool update = true);
+        void putChar(uint8_t character,uint32_t x,uint32_t y,const sFONT& font,Pixel color,bool update = true);
+
+        bool updateFrame();
     };
 }
 

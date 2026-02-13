@@ -29,15 +29,22 @@ namespace TFT_LCD {
     };
 
     class FrameBuffer{
+    public:
+        enum PixelFormat : uint8_t{
+            RGB565  = 2
+        };
+
     private:
         Pixel* _buffer = nullptr;
         uint32_t _width = 0;
         uint32_t _height = 0;
+        uint32_t _pixelFormat = 0;
+        
     public:
         FrameBuffer() = default;
-        explicit FrameBuffer(uint16_t* const buffer, uint32_t width, uint32_t height);
+        explicit FrameBuffer(uint16_t* const buffer, uint32_t width, uint32_t height,PixelFormat format = RGB565);
 
-        FrameBuffer& operator=(const FrameBuffer& other) = default;
+        FrameBuffer& operator=(const FrameBuffer& other);
 
         void setBuffer(Pixel* const newBuffer);
 
