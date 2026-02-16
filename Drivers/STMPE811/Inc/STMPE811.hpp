@@ -1,6 +1,6 @@
 
 
-#include <cstdint>
+
 #ifdef __cplusplus
 
 #ifndef __STMPE811_LIB_H__
