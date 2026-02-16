@@ -1,0 +1,4 @@
+[submodule "Drivers/ILI9341"]
+	path = Drivers/ILI9341
+	url = https://github.com/MainForm/STM32_ILI9341_Driver.git
+	branch = main
